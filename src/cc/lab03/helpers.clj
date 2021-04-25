@@ -1,6 +1,7 @@
 (ns cc.lab03.helpers
   (:require [clojure.data.json :as json]
             [camel-snake-kebab.core :as csk]
+            [clojure.string]
             [clojure.set]))
 
 (defn format-top-level-keys [hmap format-fn]
@@ -33,3 +34,56 @@
 
 #_(grammar->json "resources/grammar-res.json" (json->grammar "resources/grammar.json"))
 
+(defn upper-case? [input]
+  (when (not= (clojure.string/upper-case input)
+              (clojure.string/lower-case input))
+    (= (str input) (clojure.string/upper-case input))))
+
+(def ru->en-map {"а" "a"
+                 "б" "b"
+                 "в" "v"
+                 "г" "g"
+                 "д" "d"
+                 "е" "e"
+                 "ё" "e"
+                 "ж" "j"
+                 "з" "z"
+                 "и" "i"
+                 "й" "i"
+                 "к" "k"
+                 "л" "l"
+                 "м" "m"
+                 "н" "n"
+                 "о" "o"
+                 "п" "p"
+                 "р" "r"
+                 "с" "s"
+                 "т" "t"
+                 "у" "u"
+                 "ф" "f"
+                 "х" "h"
+                 "ц" "c"
+                 "ч" "ch"
+                 "ш" "sh"
+                 "щ" "sc"
+                 "ъ" ""
+                 "ы" "y"
+                 "ь" ""
+                 "э" "e"
+                 "ю" "iu"
+                 "я" "iu"})
+
+(defn ru->en
+  "Транслитерация в формате международной телеграммы."
+  [input]
+  (apply str (map #(if (upper-case? %)
+                     (->> %
+                          (str)
+                          (clojure.string/lower-case)
+                          (get ru->en-map)
+                          ((fn [sym] (if (nil? sym) % (clojure.string/upper-case sym)))))
+                     (->> %
+                          (str)
+                          (get ru->en-map)
+                          ((fn [sym] (if (nil? sym) % sym)))))
+                  input)))
