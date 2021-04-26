@@ -22,19 +22,19 @@
 
 ;; (defmacro term? [term tokens]
 ;;   `(when (= ~term (first ~tokens))
-;;      [(rest ~tokens) (first ~tokens)]))
+;;      [(rest ~tokens) [:term (first ~tokens)]]))
 
 (defn term? [term tokens]
   (when debug? (println {:name (format "term `%s`" term) :tokens tokens}))
   (when (= term (first tokens))
-    [(rest tokens) (first tokens)]))
+    [(rest tokens) [:term (first tokens)]]))
 
 (defn programma? [tokens]
   (when debug? (println {:name "programma" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
-                        (when-let [[tokens res] (block? tokens)]
-                          (let [outputs (conj outputs res)]
-                            [tokens outputs])))]
+                        (when-let* [[tokens res] (block? tokens)
+                                    outputs (conj outputs res)]
+                                   [tokens outputs]))]
     [(first branch-res) (into [:programma] (second branch-res))]
     nil))
 
