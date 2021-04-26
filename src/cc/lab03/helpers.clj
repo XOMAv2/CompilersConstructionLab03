@@ -2,6 +2,7 @@
   (:require [clojure.data.json :as json]
             [camel-snake-kebab.core :as csk]
             [clojure.string]
+            [clojure.walk]
             [clojure.set]))
 
 (defn format-top-level-keys [hmap format-fn]
@@ -65,3 +66,13 @@
      `(when-let [~(first bindings) ~(second bindings)]
         (when-let* ~(drop 2 bindings) ~@body))
      `(do ~@body))))
+
+(defn expand-selected-macros
+  [form namespaced-syms]
+  (clojure.walk/postwalk (fn [el]
+                           (if (and (or (seq? el)
+                                        (list? el))
+                                    (some #{(first el)} namespaced-syms))
+                             (expand-selected-macros (macroexpand-1 el) namespaced-syms)
+                             el))
+                         form))
