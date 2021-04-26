@@ -1,5 +1,5 @@
 (ns cc.lab03.generator
-  (:require [cc.lab03.helpers :refer [ru->en]]
+  (:require [cc.lab03.helpers :refer [ru->en when-let*]]
             [clojure.string]))
 
 (defn transliterate-term [term]
@@ -41,67 +41,67 @@
 (defn block? [tokens]
   (when debug? (println {:name "block" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
-                        (when-let [[tokens res] (term? "{" tokens)]
-                          (let [outputs (conj outputs res)]
-                            (when-let [[tokens res] (spisok-operatorov? tokens)]
-                              (let [outputs (conj outputs res)]
-                                (when-let [[tokens res] (term? "}" tokens)]
-                                  (let [outputs (conj outputs res)]
-                                    [tokens outputs])))))))]
+                        (when-let* [[tokens res] (term? "{" tokens)
+                                    outputs (conj outputs res)]
+                                   (when-let* [[tokens res] (spisok-operatorov? tokens)
+                                               outputs (conj outputs res)]
+                                              (when-let* [[tokens res] (term? "}" tokens)
+                                                          outputs (conj outputs res)]
+                                                         [tokens outputs]))))]
     [(first branch-res) (into [:block] (second branch-res))]
     nil))
 
 (defn spisok-operatorov? [tokens]
   (when debug? (println {:name "spisok-operatorov" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
-                        (when-let [[tokens res] (operator? tokens)]
-                          (let [outputs (conj outputs res)]
-                            (when-let [[tokens res] (hvost? tokens)]
-                              (let [outputs (conj outputs res)]
-                                [tokens outputs])))))]
+                        (when-let* [[tokens res] (operator? tokens)
+                                    outputs (conj outputs res)]
+                                   (when-let* [[tokens res] (hvost? tokens)
+                                               outputs (conj outputs res)]
+                                              [tokens outputs])))]
     [(first branch-res) (into [:spisok-operatorov] (second branch-res))]
     (if-let [branch-res (let [outputs []]
-                          (when-let [[tokens res] (operator? tokens)]
-                            (let [outputs (conj outputs res)]
-                              [tokens outputs])))]
+                          (when-let* [[tokens res] (operator? tokens)
+                                      outputs (conj outputs res)]
+                                     [tokens outputs]))]
       [(first branch-res) (into [:spisok-operatorov] (second branch-res))]
       nil)))
 
 (defn hvost? [tokens]
   (when debug? (println {:name "hvost" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
-                        (when-let [[tokens res] (term? ";" tokens)]
-                          (let [outputs (conj outputs res)]
-                            (when-let [[tokens res] (operator? tokens)]
-                              (let [outputs (conj outputs res)]
-                                (when-let [[tokens res] (hvost? tokens)]
-                                  (let [outputs (conj outputs res)]
-                                    [tokens outputs])))))))]
+                        (when-let* [[tokens res] (term? ";" tokens)
+                                    outputs (conj outputs res)]
+                                   (when-let* [[tokens res] (operator? tokens)
+                                               outputs (conj outputs res)]
+                                              (when-let* [[tokens res] (hvost? tokens)
+                                                          outputs (conj outputs res)]
+                                                         [tokens outputs]))))]
     [(first branch-res) (into [:hvost] (second branch-res))]
     (if-let [branch-res (let [outputs []]
-                          (when-let [[tokens res] (term? ";" tokens)]
-                            (let [outputs (conj outputs res)]
-                              (when-let [[tokens res] (operator? tokens)]
-                                (let [outputs (conj outputs res)]
-                                  [tokens outputs])))))]
+                          (when-let* [[tokens res] (term? ";" tokens)
+                                      outputs (conj outputs res)]
+                                     (when-let* [[tokens res] (operator? tokens)
+                                                 outputs (conj outputs res)]
+                                                [tokens outputs])))]
       [(first branch-res) (into [:hvost] (second branch-res))]
       nil)))
 
 (defn operator? [tokens]
   (when debug? (println {:name "operator" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
-                        (when-let [[tokens res] (ident? tokens)]
-                          (let [outputs (conj outputs res)]
-                            (when-let [[tokens res] (term? "=" tokens)]
-                              (let [outputs (conj outputs res)]
-                                (when-let [[tokens res] (vyrajenie? tokens)]
-                                  (let [outputs (conj outputs res)]
-                                    [tokens outputs])))))))]
+                        (when-let* [[tokens res] (ident? tokens)
+                                    outputs (conj outputs res)]
+                                   (when-let* [[tokens res] (term? "=" tokens)
+                                               outputs (conj outputs res)]
+                                              (when-let* [[tokens res] (vyrajenie? tokens)
+                                                          outputs (conj outputs res)]
+                                                         [tokens outputs]))))]
     [(first branch-res) (into [:operator] (second branch-res))]
     (if-let [branch-res (let [outputs []]
-                          (when-let [[tokens res] (block? tokens)]
-                            (let [outputs (conj outputs res)]
-                              [tokens outputs])))]
+                          (when-let* [[tokens res] (block? tokens)
+                                      outputs (conj outputs res)]
+                                     [tokens outputs]))]
       [(first branch-res) (into [:operator] (second branch-res))]
       nil)))
 

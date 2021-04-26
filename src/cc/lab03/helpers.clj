@@ -39,39 +39,10 @@
               (clojure.string/lower-case input))
     (= (str input) (clojure.string/upper-case input))))
 
-(def ru->en-map {"а" "a"
-                 "б" "b"
-                 "в" "v"
-                 "г" "g"
-                 "д" "d"
-                 "е" "e"
-                 "ё" "e"
-                 "ж" "j"
-                 "з" "z"
-                 "и" "i"
-                 "й" "i"
-                 "к" "k"
-                 "л" "l"
-                 "м" "m"
-                 "н" "n"
-                 "о" "o"
-                 "п" "p"
-                 "р" "r"
-                 "с" "s"
-                 "т" "t"
-                 "у" "u"
-                 "ф" "f"
-                 "х" "h"
-                 "ц" "c"
-                 "ч" "ch"
-                 "ш" "sh"
-                 "щ" "sc"
-                 "ъ" ""
-                 "ы" "y"
-                 "ь" ""
-                 "э" "e"
-                 "ю" "iu"
-                 "я" "iu"})
+(def ru->en-map {"а" "a", "б" "b", "в" "v", "г" "g", "д" "d", "е" "e", "ё" "e", "ж" "j", "з" "z",
+                 "и" "i", "й" "i", "к" "k", "л" "l", "м" "m", "н" "n", "о" "o", "п" "p", "р" "r",
+                 "с" "s", "т" "t", "у" "u", "ф" "f", "х" "h", "ц" "c", "ч" "ch", "ш" "sh", "щ" "sc",
+                 "ъ" "", "ы" "y", "ь" "", "э" "e", "ю" "iu", "я" "iu"})
 
 (defn ru->en
   "Транслитерация в формате международной телеграммы."
@@ -87,3 +58,10 @@
                           (get ru->en-map)
                           ((fn [sym] (if (nil? sym) % sym)))))
                   input)))
+
+(defmacro when-let*
+  ([bindings & body]
+   (if (seq bindings)
+     `(when-let [~(first bindings) ~(second bindings)]
+        (when-let* ~(drop 2 bindings) ~@body))
+     `(do ~@body))))
