@@ -53,12 +53,10 @@
 (def debug? false)
 
 (declare programma?)
-(declare blok?)
+(declare block?)
 (declare spisok-operatorov?)
 (declare operator?)
 (declare hvost?)
-(declare ident?)
-(declare vyrajenie?)
 
 (defn term? [term tokens]
   (when debug? (println {:name (format "term `%s`" term) :tokens tokens}))
@@ -78,12 +76,12 @@
   (when debug? (println {:name "block" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
                         (when-let* [[tokens res] (term? "{" tokens)
+                                    outputs (conj outputs res)
+                                    [tokens res] (spisok-operatorov? tokens)
+                                    outputs (conj outputs res)
+                                    [tokens res] (term? "}" tokens)
                                     outputs (conj outputs res)]
-                                   (when-let* [[tokens res] (spisok-operatorov? tokens)
-                                               outputs (conj outputs res)]
-                                              (when-let* [[tokens res] (term? "}" tokens)
-                                                          outputs (conj outputs res)]
-                                                         [tokens outputs]))))]
+                                   [tokens outputs]))]
     [(first branch-res) (into [:block] (second branch-res))]
     nil))
 
@@ -91,10 +89,10 @@
   (when debug? (println {:name "spisok-operatorov" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
                         (when-let* [[tokens res] (operator? tokens)
+                                    outputs (conj outputs res)
+                                    [tokens res] (hvost? tokens)
                                     outputs (conj outputs res)]
-                                   (when-let* [[tokens res] (hvost? tokens)
-                                               outputs (conj outputs res)]
-                                              [tokens outputs])))]
+                                   [tokens outputs]))]
     [(first branch-res) (into [:spisok-operatorov] (second branch-res))]
     (if-let [branch-res (let [outputs []]
                           (when-let* [[tokens res] (operator? tokens)
@@ -107,32 +105,32 @@
   (when debug? (println {:name "hvost" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
                         (when-let* [[tokens res] (term? ";" tokens)
+                                    outputs (conj outputs res)
+                                    [tokens res] (operator? tokens)
+                                    outputs (conj outputs res)
+                                    [tokens res] (hvost? tokens)
                                     outputs (conj outputs res)]
-                                   (when-let* [[tokens res] (operator? tokens)
-                                               outputs (conj outputs res)]
-                                              (when-let* [[tokens res] (hvost? tokens)
-                                                          outputs (conj outputs res)]
-                                                         [tokens outputs]))))]
+                                   [tokens outputs]))]
     [(first branch-res) (into [:hvost] (second branch-res))]
     (if-let [branch-res (let [outputs []]
                           (when-let* [[tokens res] (term? ";" tokens)
+                                      outputs (conj outputs res)
+                                      [tokens res] (operator? tokens)
                                       outputs (conj outputs res)]
-                                     (when-let* [[tokens res] (operator? tokens)
-                                                 outputs (conj outputs res)]
-                                                [tokens outputs])))]
+                                     [tokens outputs]))]
       [(first branch-res) (into [:hvost] (second branch-res))]
       nil)))
 
 (defn operator? [tokens]
   (when debug? (println {:name "operator" :tokens tokens}))
   (if-let [branch-res (let [outputs []]
-                        (when-let* [[tokens res] (ident? tokens)
+                        (when-let* [[tokens res] (term? "идент" tokens)
+                                    outputs (conj outputs res)
+                                    [tokens res] (term? "=" tokens)
+                                    outputs (conj outputs res)
+                                    [tokens res] (term? "выражение" tokens)
                                     outputs (conj outputs res)]
-                                   (when-let* [[tokens res] (term? "=" tokens)
-                                               outputs (conj outputs res)]
-                                              (when-let* [[tokens res] (vyrajenie? tokens)
-                                                          outputs (conj outputs res)]
-                                                         [tokens outputs]))))]
+                                   [tokens outputs]))]
     [(first branch-res) (into [:operator] (second branch-res))]
     (if-let [branch-res (let [outputs []]
                           (when-let* [[tokens res] (block? tokens)
@@ -140,14 +138,6 @@
                                      [tokens outputs]))]
       [(first branch-res) (into [:operator] (second branch-res))]
       nil)))
-
-(defn ident? [tokens]
-  (when debug? (println {:name "ident" :tokens tokens}))
-  [(rest tokens) (into [:ident] (first tokens))])
-
-(defn vyrajenie? [tokens]
-  (when debug? (println {:name "vyrajenie" :tokens tokens}))
-  [(rest tokens) (into [:vyrajenie] (first tokens))])
 
 #_(programma? ["{"
                "идент"
