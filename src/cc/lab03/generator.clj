@@ -14,14 +14,22 @@
 
 (def debug? false)
 
-;; (defmacro term? [term tokens]
-;;   `(when (= ~term (first ~tokens))
-;;      [(rest ~tokens) [:term (first ~tokens)]]))
+(defmacro rollback-alts
+  "nt-alternatives - последовательность, каждый элемент которой - результат разбора (возможно nil)
+                     одного из альтернативных правил для нетерминала nt.
+   alt-sym - символ, с которым будет связан текущий рассматриваемый элемент последовательности
+             nt-alternatives.
+   form - какая-то форма, в которой доступен символ alt-sym со связанным значением.
+   Если form возвращает nil, то будет рассмотрен следующий символ из nt-alternatives, иначе обход
+   прекращается и возвращается результат form."
+  [[alt-sym nt-alternatives] form]
+  `(-> (fn [_# ~alt-sym]
+         (when-let [result# ~form]
+           (reduced result#)))
+       (reduce nil ~nt-alternatives)))
 
-(defn term? [term tokens]
-  (when debug? (println {:name (format "term `%s`" term) :tokens tokens}))
-  (when (= term (first tokens))
-    [(rest tokens) [:term (first tokens)]]))
+#_(macroexpand-1 '(nt-alternatives [nt-res (spisok-operatorov? tokens)]
+                                   (with-let* [[tokens res] nt-res])))
 
 (defmacro succ
   [chain terms tokens outputs]
