@@ -1,54 +1,15 @@
 (ns cc.lab03.analyzer
-  (:require [cc.lab03.helpers :refer [when-let*]]))
+  (:require [cc.lab03.helpers :refer [when-let*]]
+            [clojure.string]))
 
 (def program (slurp "resources/program.lab"))
 
-(def tokens [["{" "{"]
-             ["идент" "b"]
-             ["=" "="]
-             ["конст" "4"]
-             [";" ";"]
-             ["{" "{"]
-             ["{" "{"]
-             ["{" "{"]
-             ["идент" "b"]
-             ["=" "="]
-             ["-" "-"]
-             ["конст" "4"]
-             ["==" "=="]
-             ["конст" "5"]
-             ["}" "}"]
-             ["}" "}"]
-             [";" ";"]
-             ["идент" "a"]
-             ["=" "="]
-             ["идент" "b"]
-             ["}" "}"]
-             [";" ";"]
-             ["идент" "d"]
-             ["=" "="]
-             ["(" "("]
-             ["идент" "a"]
-             ["*" "*"]
-             ["конст" "3"]
-             [")" ")"]
-             ["<" "<"]
-             ["идент" "bb"]
-             ["or" "or"]
-             ["not" "not"]
-             ["("]
-             ["идент" "c"]
-             ["mod" "mod"]
-             ["конст" "2"]
-             [")" ")"]
-             [";" ";"]
-             ["идент" "c"]
-             ["=" "="]
-             ["идент" "d"]
-             ["-" "-"]
-             ["конст" "32"]
-             ["}" "}"]
-             [nil "<EOF>"]])
+(def tokens (-> program
+                (clojure.string/trim)
+                (clojure.string/replace #"\s+" " ")
+                (clojure.string/replace #"[a-zA-Z]+" "идент")
+                (clojure.string/replace #"\d+" "конст")
+                (clojure.string/split #" ")))
 
 (def debug? false)
 
