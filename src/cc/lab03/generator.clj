@@ -26,10 +26,17 @@
    Если form возвращает nil, то будет рассмотрен следующий символ из nt-alternatives, иначе обход
    прекращается и возвращается результат form."
   [[alt-sym nt-alternatives] form]
-  `(-> (fn [_# ~alt-sym]
-         (when-let [result# ~form]
-           (reduced result#)))
-       (reduce nil ~nt-alternatives)))
+  `(let [rollback-count# (atom 0)]
+     (-> (fn [_# ~alt-sym]
+           (when (some? ~alt-sym)
+             (swap! rollback-count# inc)
+             (when (and debug? (> @rollback-count# 1))
+               (println "rollback №" @rollback-count#)
+               (println (first ~alt-sym))
+               (println (second ~alt-sym))))
+           (when-let [result# ~form]
+             (reduced result#)))
+       (reduce nil ~nt-alternatives))))
 
 #_(macroexpand-1 '(nt-alternatives [nt-res (spisok-operatorov? tokens)]
                                    (with-let* [[tokens res] nt-res])))
@@ -50,18 +57,19 @@
                                  (succ ~(rest chain) ~terms ~tokens ~outputs))))
     [tokens outputs]))
 
-(defmacro alt [nt nt-prods terms tokens outputs]
+(defmacro alt [nt alt-number nt-prods terms tokens outputs]
   (when (seq nt-prods)
-    `(lazy-seq (cons (when-let [branch# (succ ~(first nt-prods) ~terms ~tokens ~outputs)]
-                       [(first branch#) (into [~(keyword nt)] (second branch#))])
-                     (alt ~nt ~(rest nt-prods) ~terms ~tokens ~outputs)))))
+    `(lazy-seq (cons (do (when debug? (println ~nt ~alt-number))
+                         (when-let [branch# (succ ~(first nt-prods) ~terms ~tokens ~outputs)]
+                           [(first branch#) (into [~(keyword nt)] (second branch#))]))
+                     (alt ~nt ~(inc alt-number) ~(rest nt-prods) ~terms ~tokens ~outputs)))))
 
 (defmacro nt-analyzer [nt grammar]
   (let [translit (transliterate-nonterm nt)]
     `(defn ~(symbol (str translit "?")) [tokens]
        (when debug? (println {:name ~translit :tokens tokens}))
        (let [outputs []]
-         (alt ~translit ~(-> grammar :prods (get nt)) ~(:terms grammar) tokens outputs)))))
+         (alt ~translit 1 ~(-> grammar :prods (get nt)) ~(:terms grammar) tokens outputs)))))
 
 (def pprint-options [:dispatch clojure.pprint/code-dispatch
                      :right-margin 100
@@ -71,7 +79,8 @@
   (-> `(cc.lab03.generator/nt-analyzer ~nt ~grammar)
        (expand-selected-macros ['cc.lab03.generator/nt-analyzer
                                 'cc.lab03.generator/alt
-                                'cc.lab03.generator/succ])
+                                'cc.lab03.generator/succ
+                                #_'cc.lab03.generator/rollback-alts])
        (#(with-out-str (apply clojure.pprint/write % pprint-options)))))
 
 (defn term? [term tokens]
@@ -88,7 +97,7 @@
         res (reduce #(str % "(declare " (transliterate-nonterm %2) "?)\r\n")
                     res
                     (:nonterms grammar))
-        res (str res "\r\n(def debug? false)\r\n\r\n")
+        res (str res "\r\n(def debug? true)\r\n\r\n")
         res (-> '(defn term? [term tokens]
                    (when debug? (println {:name (format "term '%s'" term) :tokens tokens}))
                    (when (= term (first tokens))
@@ -100,6 +109,15 @@
                     (:nonterms grammar))]
     res))
 
-(-> (json->grammar "resources/grammar.json")
+(defn simplify [program]
+  (-> program
+      (clojure.string/replace #"branch__\d+__auto__" "branch")
+      (clojure.string/replace #"nt-res__\d+__auto__" "nt-res")
+      (clojure.string/replace #" res__\d+__auto__" " res")
+      (clojure.string/replace #"\[tokens res\]\r\n\s+" "[tokens res] ")
+      (clojure.string/replace #"outputs\r\n\s+" "outputs ")))
+
+(-> (json->grammar "resources/grammar-simple.json")
     (gen-analyzer "cc.lab03.autogen")
+    (simplify)
     (->> (spit "src/cc/lab03/autogen.clj")))
