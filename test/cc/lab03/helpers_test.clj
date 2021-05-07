@@ -9,7 +9,7 @@
   (is (= "Nikita" (ru->en "Nikita")))
   (is (= "NikitaNikitovich" (ru->en "NikitaНикитович"))))
 
-(deftest upper-case?-tes
+(deftest upper-case?-test
   (is (thrown? Exception (upper-case? nil)))
   (is (= nil (upper-case? "*")))
   (is (= true (upper-case? "N")))
