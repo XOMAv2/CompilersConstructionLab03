@@ -8,8 +8,6 @@
 (def tokens (-> program
                 (clojure.string/trim)
                 (clojure.string/replace #"\s+" " ")
-                (clojure.string/replace #"[a-zA-Z]+" "идент")
-                (clojure.string/replace #"\d+" "конст")
                 (clojure.string/split #" ")))
 
 (def debug? false)
